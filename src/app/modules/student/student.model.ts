@@ -1,75 +1,207 @@
-import mongoose, { model } from "mongoose";
-import { TLocalGuardian, TName, TStudent } from "./student.interface";
+import bcrypt from "bcrypt";
+import { Schema, model } from "mongoose";
+import validator from "validator";
+import config from "../../config";
+import {
+  StudentModel,
+  TGuardian,
+  TLocalGuardian,
+  TStudent,
+  TUsername,
+} from "./student.interface";
 
-const nameSchema = new mongoose.Schema<TName>({
+const userNameSchema = new Schema<TUsername>({
   firstName: {
     type: String,
-    required: [true, "First name is required"],
+    trim: true,
+    required: [true, "First name required"],
+    maxlength: [20, "Max length is 20"],
+    validate: {
+      validator: function (value: string) {
+        const firstNameStr =
+          value.charAt(0).toUpperCase() + value.slice(1).toLowerCase();
+
+        return firstNameStr === value;
+      },
+      message: "{VALUE} is not capitalize format",
+    },
   },
-  middleName: String,
-  lastName: String,
+  middleName: {
+    type: String,
+    trim: true, // remove extra space
+  },
+  lastName: {
+    type: String,
+    required: [true, "Last name required"],
+    trim: true,
+    validate: {
+      validator: (value: string) => validator.isAlpha(value),
+      message: "{VALUE} is not valid",
+    },
+  },
 });
 
-const localGuardianSchema = new mongoose.Schema<TLocalGuardian>({
+const guardianSchema = new Schema<TGuardian>({
+  fatherName: {
+    type: String,
+    required: true,
+    trim: true,
+  },
+  fatherContact: {
+    type: String,
+    required: true,
+    trim: true,
+  },
+  fatherOccupation: {
+    type: String,
+    required: true,
+  },
+  motherName: {
+    type: String,
+    required: true,
+    trim: true,
+  },
+  motherContact: {
+    type: String,
+    required: true,
+  },
+  motherOccupation: {
+    type: String,
+    required: true,
+  },
+});
+
+const localGuardianSchema = new Schema<TLocalGuardian>({
   name: {
     type: String,
-    required: [true, "Guardian name is required"],
+    required: true,
+    trim: true,
+  },
+  occupation: {
+    type: String,
+    required: true,
   },
   address: {
     type: String,
-    required: [true, "Guardian address is required"],
-  },
-  contact: {
-    type: String,
-    required: [true, "Guardian contact is required"],
+    required: true,
   },
 });
 
-const studentSchema = new mongoose.Schema<TStudent>({
-  id: {
-    type: String,
-    required: [true, "Id is required"],
+const studentSchema = new Schema<TStudent, StudentModel>(
+  {
+    id: { type: String, required: true, unique: true },
+    password: {
+      type: String,
+      required: [true, "Password is required"],
+      unique: true,
+      maxlength: [20, "Password cannot be more than 20 characters"],
+    },
+    name: {
+      type: userNameSchema,
+      required: true,
+    },
+    gender: {
+      type: String,
+      enum: {
+        values: ["male", "female", "other"],
+        message: "{VALUE} is not supported",
+      },
+      required: [true, "gender is required"],
+    },
+    dateOfBirth: { type: String },
+    email: {
+      type: String,
+      required: true,
+      // validate: {
+      //   validator: (value: string) => validator.isEmail(value),
+      //   message: '{VALUE} is not a valid email',
+      // },
+    },
+    contactNo: { type: String, required: true },
+    emergencyContact: { type: String, required: true },
+    bloodGroup: {
+      type: String,
+      enum: ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"],
+    },
+    presentAddress: { type: String, required: true },
+    permanentAddress: { type: String, required: true },
+    guardian: {
+      type: guardianSchema,
+      required: true,
+    },
+    localGuardian: {
+      type: localGuardianSchema,
+      required: true,
+    },
+    profileImg: {
+      type: String,
+    },
+    isActive: {
+      type: String,
+      enum: ["active", "blocked"],
+      default: "active",
+    },
+    isDeleted: {
+      type: Boolean,
+      default: false,
+    },
   },
-  user: mongoose.Types.ObjectId,
-  name: nameSchema,
-  gender: {
-    type: String,
-    enum: ["male", "female"],
-    required: [true, "Please select your gender"],
+  {
+    toJSON: {
+      virtuals: true,
+    },
   },
-  dateOfBirth: {
-    type: String,
-    required: [true, "Please select your date of birth"],
-  },
-  email: {
-    type: String,
-    required: [true, "Enter a valid email"],
-  },
-  contactNo: {
-    type: String,
-    required: [true, "Enter your contact no:"],
-  },
-  emergencyContactNo: {
-    type: String,
-    required: [true, "Emergency contact is required"],
-  },
-  presentAddress: {
-    type: String,
-    required: [true, "Present address is required"],
-  },
-  permanentAddress: {
-    type: String,
-    required: [true, "Permanent address is required"],
-  },
-  localGuardian: localGuardianSchema,
-  profileImage: {
-    type: String,
-  },
-  status: Boolean,
-  academicDepartment: mongoose.Types.ObjectId,
-  isDeleted: Boolean,
-  createdAt: Date,
-  updatedAt: Date,
+);
+
+// creating a custom static method
+studentSchema.statics.isUserExists = async function (id: string) {
+  const existingUser = await Student.findOne({ id });
+
+  return existingUser;
+};
+
+// pre save middleware / hook - we will save data
+studentSchema.pre("save", async function (next) {
+  // eslint-disable-next-line @typescript-eslint/no-this-alias
+  const user = this;
+  user.password = await bcrypt.hash(
+    user.password,
+    Number(config.bcrypt_salt_round),
+  );
+  next();
 });
 
-export const Student = model<TStudent>("Student", studentSchema);
+// post save middleware / hook - we saved data
+studentSchema.post("save", function (doc, next) {
+  doc.password = "";
+  next();
+});
+
+// pre find quarry middleware / hook
+studentSchema.pre("find", async function (next) {
+  this.find({ isDeleted: { $ne: true } });
+  next();
+});
+
+studentSchema.pre("findOne", async function (next) {
+  this.find({ isDeleted: { $ne: true } });
+  next();
+});
+
+studentSchema.pre("aggregate", async function (next) {
+  this.pipeline().unshift({ $match: { isDeleted: { $ne: true } } });
+  next();
+});
+
+studentSchema.virtual("fullName").get(function () {
+  return `${this.name.firstName} ${this.name.middleName} ${this.name.lastName}`;
+});
+
+// creating a custom instance method
+// studentSchema.methods.isUserExists = async function (id: string) {
+//   const exitingUser = await Student.findOne({ id })
+
+//   return exitingUser
+// }
+
+export const Student = model<TStudent, StudentModel>("Student", studentSchema);

@@ -1,47 +1,46 @@
 import { z } from "zod";
-import { TStudent } from "./student.interface";
 
-// Define Zod schemas
-const nameValidationSchema = z.object({
-  firstName: z.string().min(1),
-  middleName: z.string(),
-  lastName: z.string(),
+const userNameValidationSchema = z.object({
+  firstName: z.string().trim().min(1).max(20),
+  middleName: z.string().trim(),
+  lastName: z.string().trim().min(1),
+});
+
+const guardianValidationSchema = z.object({
+  fatherName: z.string().trim(),
+  fatherContact: z.string().trim(),
+  fatherOccupation: z.string(),
+  motherName: z.string().trim(),
+  motherContact: z.string().trim(),
+  motherOccupation: z.string(),
 });
 
 const localGuardianValidationSchema = z.object({
-  name: z.string().min(1),
-  address: z.string().min(1),
-  contact: z.string().min(1),
+  name: z.string().trim(),
+  occupation: z.string(),
+  address: z.string(),
+  contactNo: z.string(),
 });
 
-const studentValidationSchema = z.object({
-  id: z.string().min(1),
-  user: z.string(),
-  name: nameValidationSchema,
-  gender: z.enum(["male", "female"]),
-  dateOfBirth: z.string(),
-  email: z.string().email(),
-  contactNo: z.string().min(1),
-  emergencyContactNo: z.string().min(1),
-  presentAddress: z.string().min(1),
-  permanentAddress: z.string().min(1),
+const studentValidationZodSchema = z.object({
+  id: z.string(),
+  password: z.string().max(20),
+  name: userNameValidationSchema,
+  gender: z.enum(["male", "female", "other"]),
+  dateOfBirth: z.string().optional(),
+  email: z.string().email({ message: "Enter a valid email" }),
+  contactNo: z.string(),
+  emergencyContact: z.string(),
+  bloodGroup: z
+    .enum(["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"])
+    .optional(),
+  presentAddress: z.string(),
+  permanentAddress: z.string(),
+  guardian: guardianValidationSchema,
   localGuardian: localGuardianValidationSchema,
-  profileImage: z.string().optional(),
-  status: z.boolean(),
-  academicDepartment: z.string(),
-  isDeleted: z.boolean(),
-  createdAt: z.date(),
-  updatedAt: z.date(),
+  profileImg: z.string().optional(),
+  isActive: z.enum(["active", "blocked"]).default("active"),
+  isDeleted: z.boolean().default(false),
 });
 
-// Validate function
-export const validateStudent = (data: TStudent) => {
-  try {
-    studentValidationSchema.parse(data);
-    return true; // Data is valid
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  } catch (error: any) {
-    console.error("Validation error:", error.errors);
-    return false; // Data is invalid
-  }
-};
+export default studentValidationZodSchema;
