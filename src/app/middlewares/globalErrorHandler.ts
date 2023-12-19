@@ -4,18 +4,19 @@
 import { NextFunction, Request, Response } from "express";
 
 const globalErrorHandler = (
-  error: any,
+  err: any,
   req: Request,
   res: Response,
   next: NextFunction,
 ) => {
-  const statusCode = 500;
-  const message = error.message || "Something went wrong";
+  const status = 500;
 
-  return res.status(statusCode).json({
+  const message = err.message || "Something went wrong";
+
+  return res.status(status).json({
     success: false,
     message,
-    error: error,
+    error: err,
   });
 };
 

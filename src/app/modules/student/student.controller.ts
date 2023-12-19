@@ -15,8 +15,8 @@ const getAllStudents = async (
       message: "Students are retrieved successfully",
       data: result,
     });
-  } catch (error) {
-    next(error);
+  } catch (err) {
+    next(err);
   }
 };
 
@@ -33,8 +33,8 @@ const getSingleStudent = async (
       message: "Student found successfully",
       data: result,
     });
-  } catch (error) {
-    next(error);
+  } catch (err) {
+    next(err);
   }
 };
 
@@ -51,8 +51,8 @@ const deleteSingleStudent = async (
       message: "Student deleted successfully!",
       data: result,
     });
-  } catch (error) {
-    next(error);
+  } catch (err) {
+    next(err);
   }
 };
 
@@ -75,8 +75,8 @@ const updateSingleStudent = async (
       message: "Student updated successfully!",
       data: result,
     });
-  } catch (error) {
-    next(error);
+  } catch (err) {
+    next(err);
   }
 };
 
