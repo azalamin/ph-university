@@ -1,7 +1,5 @@
-import bcrypt from "bcrypt";
 import { Schema, model } from "mongoose";
 import validator from "validator";
-import config from "../../config";
 import {
   StudentModel,
   TGuardian,
@@ -96,12 +94,6 @@ const studentSchema = new Schema<TStudent, StudentModel>(
       unique: true,
       ref: "User",
     },
-    password: {
-      type: String,
-      required: [true, "Password is required"],
-      unique: true,
-      maxlength: [20, "Password cannot be more than 20 characters"],
-    },
     name: {
       type: userNameSchema,
       required: true,
@@ -161,23 +153,6 @@ studentSchema.statics.isUserExists = async function (id: string) {
   return existingUser;
 };
 
-// pre save middleware / hook - we will save data
-studentSchema.pre("save", async function (next) {
-  // eslint-disable-next-line @typescript-eslint/no-this-alias
-  const user = this;
-  user.password = await bcrypt.hash(
-    user.password,
-    Number(config.bcrypt_salt_round),
-  );
-  next();
-});
-
-// post save middleware / hook - we saved data
-studentSchema.post("save", function (doc, next) {
-  doc.password = "";
-  next();
-});
-
 // pre find quarry middleware / hook
 studentSchema.pre("find", async function (next) {
   this.find({ isDeleted: { $ne: true } });
@@ -197,12 +172,5 @@ studentSchema.pre("aggregate", async function (next) {
 studentSchema.virtual("fullName").get(function () {
   return `${this.name.firstName} ${this.name.middleName} ${this.name.lastName}`;
 });
-
-// creating a custom instance method
-// studentSchema.methods.isUserExists = async function (id: string) {
-//   const exitingUser = await Student.findOne({ id })
-
-//   return exitingUser
-// }
 
 export const Student = model<TStudent, StudentModel>("Student", studentSchema);
