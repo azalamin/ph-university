@@ -1,5 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextFunction, Request, Response } from "express";
+import httpStatus from "http-status";
+import sendResponse from "../../utils/sendResponse";
 import { StudentServices } from "./student.service";
 
 const getAllStudents = async (
@@ -10,9 +12,10 @@ const getAllStudents = async (
   try {
     const result = await StudentServices.getAllStudentsFromDB();
 
-    res.status(200).json({
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
       success: true,
-      message: "Students are retrieved successfully",
+      message: "Students are retrieved successfully!",
       data: result,
     });
   } catch (err) {
@@ -28,9 +31,10 @@ const getSingleStudent = async (
   try {
     const { studentId } = req.params;
     const result = await StudentServices.getSingleStudentFromDB(studentId);
-    res.status(200).json({
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
       success: true,
-      message: "Student found successfully",
+      message: "Student found successfully!",
       data: result,
     });
   } catch (err) {
@@ -46,9 +50,11 @@ const deleteSingleStudent = async (
   try {
     const { studentId } = req.params;
     const result = await StudentServices.deleteSingleStudentFromDB(studentId);
-    res.status(200).json({
+
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
       success: true,
-      message: "Student deleted successfully!",
+      message: "Students deleted successfully!",
       data: result,
     });
   } catch (err) {
@@ -70,9 +76,10 @@ const updateSingleStudent = async (
       updates,
     );
 
-    res.status(500).json({
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
       success: true,
-      message: "Student updated successfully!",
+      message: "Students updated successfully!",
       data: result,
     });
   } catch (err) {
