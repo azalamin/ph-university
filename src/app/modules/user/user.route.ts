@@ -1,7 +1,8 @@
 import express from "express";
+import { UserControllers } from "./user.controller";
 
 const route = express.Router();
 
-route.post("/create-user", userController.createUser);
+route.post("/create-student", UserControllers.createStudent);
 
 export const UserRoutes = route;
