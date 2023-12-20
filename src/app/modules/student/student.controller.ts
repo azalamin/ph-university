@@ -1,33 +1,28 @@
+/* eslint-disable no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { NextFunction, Request, Response } from "express";
+import { NextFunction, Request, RequestHandler, Response } from "express";
 import httpStatus from "http-status";
 import sendResponse from "../../utils/sendResponse";
 import { StudentServices } from "./student.service";
 
-const getAllStudents = async (
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) => {
-  try {
-    const result = await StudentServices.getAllStudentsFromDB();
-
-    sendResponse(res, {
-      statusCode: httpStatus.OK,
-      success: true,
-      message: "Students are retrieved successfully!",
-      data: result,
-    });
-  } catch (err) {
-    next(err);
-  }
+const catchAsync = (fn: RequestHandler) => {
+  return (req: Request, res: Response, next: NextFunction) =>
+    Promise.resolve(fn(req, res, next)).catch((err) => next(err));
 };
 
-const getSingleStudent = async (
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) => {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const getAllStudents: RequestHandler = catchAsync(async (req, res, next) => {
+  const result = await StudentServices.getAllStudentsFromDB();
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Students are retrieved successfully!",
+    data: result,
+  });
+});
+
+const getSingleStudent: RequestHandler = async (req, res, next) => {
   try {
     const { studentId } = req.params;
     const result = await StudentServices.getSingleStudentFromDB(studentId);
@@ -42,11 +37,7 @@ const getSingleStudent = async (
   }
 };
 
-const deleteSingleStudent = async (
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) => {
+const deleteSingleStudent: RequestHandler = async (req, res, next) => {
   try {
     const { studentId } = req.params;
     const result = await StudentServices.deleteSingleStudentFromDB(studentId);
@@ -62,11 +53,7 @@ const deleteSingleStudent = async (
   }
 };
 
-const updateSingleStudent = async (
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) => {
+const updateSingleStudent: RequestHandler = async (req, res, next) => {
   try {
     const { studentId } = req.params;
     const updates = req.body;
