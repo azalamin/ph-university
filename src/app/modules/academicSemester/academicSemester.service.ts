@@ -26,18 +26,20 @@ const getSingleAcademicSemester = async (id: string) => {
 
 const updateSingleAcademicSemester = async (
   id: string,
-  semesterData: TAcademicSemester,
+  payload: Partial<TAcademicSemester>,
 ) => {
-  const updatedData = await AcademicSemester.findByIdAndUpdate(
-    id,
-    semesterData,
-    {
-      upsert: true,
-      new: true,
-    },
-  );
+  if (
+    payload.name &&
+    payload.code &&
+    AcademicSemesterNameCodeMapper[payload.name] !== payload.code
+  ) {
+    throw new Error("Invalid semester code");
+  }
+  const result = await AcademicSemester.findByIdAndUpdate(id, payload, {
+    new: true,
+  });
 
-  return updatedData;
+  return result;
 };
 
 export const AcademicSemesterServices = {
